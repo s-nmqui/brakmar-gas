@@ -13,6 +13,9 @@ export function formatOrderMessage(
   config: { companyName: string },
   data: {
     name: string;
+    phone?: string;
+    modality?: "retiro" | "domicilio";
+    orderNumber?: string;
     address: string;
     locality: string;
     notes: string;
@@ -27,8 +30,19 @@ export function formatOrderMessage(
   lines.push(`Hola, ${config.companyName}. Quiero consultar o realizar el siguiente pedido.`);
   lines.push("");
   lines.push(`Nombre: ${data.name || "-"}`);
-  lines.push(`Dirección: ${data.address || "-"}`);
-  lines.push(`Localidad: ${data.locality || "-"}`);
+  if (data.phone) {
+    lines.push(`Teléfono: ${data.phone}`);
+  }
+  lines.push(
+    `Modalidad: ${data.modality === "retiro" ? "Retiro en tienda" : "Entrega a domicilio"}`,
+  );
+  if (data.orderNumber) {
+    lines.push(`Pedido registrado: ${data.orderNumber}`);
+  }
+  if (data.modality !== "retiro") {
+    lines.push(`Dirección: ${data.address || "-"}`);
+    lines.push(`Localidad: ${data.locality || "-"}`);
+  }
   if (data.notes.trim()) {
     lines.push(`Instrucciones: ${data.notes.trim()}`);
   }

@@ -57,8 +57,10 @@ export async function saveProductAction(
   const productType = parseProductType(cleanText(formData.get("productType"), 30));
   const priceRaw = cleanText(formData.get("price"), 30);
   const promoRaw = cleanText(formData.get("promoPrice"), 30);
+  const costRaw = cleanText(formData.get("cost"), 30);
   const priceCents = priceRaw ? parsePriceToCents(priceRaw) : null;
   const promoPriceCents = promoRaw ? parsePriceToCents(promoRaw) : null;
+  const costCents = costRaw ? parsePriceToCents(costRaw) : null;
   const stock = Math.max(0, parseIntSafe(formData.get("stock"), 0));
   const lowStockThreshold = Math.max(
     0,
@@ -76,6 +78,9 @@ export async function saveProductAction(
   }
   if (promoRaw && promoPriceCents === null) {
     fieldErrors.promoPrice = "El precio promocional debe ser un número válido.";
+  }
+  if (costRaw && costCents === null) {
+    fieldErrors.cost = "El costo debe ser un número válido.";
   }
 
   let imagePath = cleanText(formData.get("imagePath"), 300) || null;
@@ -111,6 +116,7 @@ export async function saveProductAction(
     description,
     priceCents,
     promoPriceCents,
+    costCents,
     imagePath,
     extraImages,
     stock,

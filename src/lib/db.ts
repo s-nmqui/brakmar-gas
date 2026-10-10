@@ -97,6 +97,105 @@ CREATE TABLE IF NOT EXISTS rate_limits (
   count INTEGER NOT NULL DEFAULT 0,
   window_start INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS sales (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sale_number TEXT NOT NULL UNIQUE,
+  sale_date TEXT NOT NULL,
+  source TEXT NOT NULL DEFAULT 'manual',
+  order_id INTEGER UNIQUE,
+  channel TEXT NOT NULL DEFAULT 'local',
+  payment_method TEXT,
+  modality TEXT NOT NULL DEFAULT 'retiro',
+  is_mides INTEGER NOT NULL DEFAULT 0,
+  subtotal_cents INTEGER NOT NULL DEFAULT 0,
+  discount_cents INTEGER NOT NULL DEFAULT 0,
+  total_cents INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'completed',
+  stock_applied INTEGER NOT NULL DEFAULT 0,
+  stock_reverted INTEGER NOT NULL DEFAULT 0,
+  cancelled_at TEXT,
+  cancel_reason TEXT NOT NULL DEFAULT '',
+  notes TEXT NOT NULL DEFAULT '',
+  created_by TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS sale_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sale_id INTEGER NOT NULL REFERENCES sales(id) ON DELETE CASCADE,
+  product_id INTEGER,
+  product_name TEXT NOT NULL,
+  unit_price_cents INTEGER NOT NULL,
+  cost_cents INTEGER,
+  quantity INTEGER NOT NULL,
+  discount_cents INTEGER NOT NULL DEFAULT 0,
+  line_total_cents INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_number TEXT NOT NULL UNIQUE,
+  order_date TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  idempotency_key TEXT NOT NULL UNIQUE,
+  signature TEXT NOT NULL DEFAULT '',
+  customer_name TEXT NOT NULL,
+  customer_phone TEXT NOT NULL DEFAULT '',
+  address TEXT NOT NULL DEFAULT '',
+  locality TEXT NOT NULL DEFAULT '',
+  modality TEXT NOT NULL DEFAULT 'domicilio',
+  notes TEXT NOT NULL DEFAULT '',
+  total_est_cents INTEGER,
+  sale_id INTEGER UNIQUE,
+  cancel_reason TEXT NOT NULL DEFAULT '',
+  cancelled_at TEXT,
+  confirmed_at TEXT,
+  delivered_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS order_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  product_id INTEGER,
+  product_name TEXT NOT NULL,
+  unit_price_cents INTEGER,
+  quantity INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS stock_movements (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  product_id INTEGER NOT NULL,
+  delta INTEGER NOT NULL,
+  reason TEXT NOT NULL,
+  reference_type TEXT NOT NULL DEFAULT '',
+  reference_id INTEGER,
+  created_by TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS audit_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  actor TEXT NOT NULL DEFAULT '',
+  action TEXT NOT NULL,
+  entity_type TEXT NOT NULL DEFAULT '',
+  entity_id INTEGER,
+  details TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_sales_sale_date ON sales(sale_date);
+CREATE INDEX IF NOT EXISTS idx_sales_status ON sales(status);
+CREATE INDEX IF NOT EXISTS idx_sales_channel ON sales(channel);
+CREATE INDEX IF NOT EXISTS idx_sale_items_sale_id ON sale_items(sale_id);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+CREATE INDEX IF NOT EXISTS idx_orders_order_date ON orders(order_date);
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_stock_movements_product_id ON stock_movements(product_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at);
 `;
 
 interface GlobalDb {
@@ -105,6 +204,20 @@ interface GlobalDb {
 }
 
 const g = globalThis as unknown as GlobalDb;
+
+function ensureColumn(
+  db: DatabaseSync,
+  table: string,
+  column: string,
+  definition: string,
+): void {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{
+    name: string;
+  }>;
+  if (!cols.some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${definition}`);
+  }
+}
 
 export function getDbPath(): string {
   if (process.env.DATABASE_PATH) return process.env.DATABASE_PATH;
@@ -121,6 +234,8 @@ export function getDb(): DatabaseSync {
   db.exec("PRAGMA journal_mode = WAL;");
   db.exec("PRAGMA foreign_keys = ON;");
   db.exec(SCHEMA);
+  ensureColumn(db, "products", "cost_cents", "cost_cents INTEGER");
+  ensureColumn(db, "products", "updated_at", "updated_at TEXT NOT NULL DEFAULT (datetime('now'))");
 
   g.__brakmarDb = db;
 
@@ -130,6 +245,23 @@ export function getDb(): DatabaseSync {
   }
 
   return db;
+}
+
+export function inTransaction<T>(fn: (db: DatabaseSync) => T): T {
+  const db = getDb();
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    const result = fn(db);
+    db.exec("COMMIT");
+    return result;
+  } catch (err) {
+    try {
+      db.exec("ROLLBACK");
+    } catch {
+      // Ya no hay transacción activa.
+    }
+    throw err;
+  }
 }
 
 function seedIfEmpty(db: DatabaseSync): void {

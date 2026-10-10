@@ -7,7 +7,9 @@ import { cn } from "@/lib/cn";
 import { logoutAction } from "@/app/actions/auth";
 import { Logo } from "../site/Logo";
 import {
+  IconChart,
   IconClose,
+  IconDollar,
   IconInfo,
   IconList,
   IconLogout,
@@ -19,6 +21,7 @@ import {
   IconSettings,
   IconShield,
   IconTag,
+  IconTruck,
 } from "../icons";
 
 const NAV: Array<{ href: string; label: string; Icon: typeof IconList; exact?: boolean }> = [
@@ -26,6 +29,9 @@ const NAV: Array<{ href: string; label: string; Icon: typeof IconList; exact?: b
   { href: "/admin/productos", label: "Productos", Icon: IconPackage },
   { href: "/admin/stock", label: "Stock", Icon: IconRefresh },
   { href: "/admin/promociones", label: "Promociones", Icon: IconTag },
+  { href: "/admin/ventas", label: "Ventas", Icon: IconDollar },
+  { href: "/admin/pedidos", label: "Pedidos", Icon: IconTruck },
+  { href: "/admin/estadisticas", label: "Estadísticas", Icon: IconChart },
   { href: "/admin/resenas", label: "Reseñas", Icon: IconMessage },
   { href: "/admin/faq", label: "Preguntas", Icon: IconInfo },
   { href: "/admin/mides", label: "MIDES", Icon: IconShield },

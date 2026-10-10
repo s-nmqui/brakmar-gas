@@ -17,11 +17,23 @@ export function formatCentsOrConsultar(cents: Cents | null | undefined): string 
 }
 
 export function parsePriceToCents(input: string): Cents | null {
-  const raw = input.trim().replace(/\s/g, "").replace(/\$/g, "");
+  const raw = input.trim().replace(/\s+/g, "").replace(/[$]+/g, "").replace(/UYU/gi, "");
   if (!raw) return null;
-  const normalized = raw.includes(",")
-    ? raw.replace(/\./g, "").replace(",", ".")
-    : raw;
+  let normalized = raw;
+  const hasDot = raw.includes(".");
+  const hasComma = raw.includes(",");
+  if (hasComma && hasDot) {
+    const dec = raw.lastIndexOf(",") > raw.lastIndexOf(".") ? "," : ".";
+    const other = dec === "." ? "," : ".";
+    normalized = raw.split(other).join("").split(dec).join(".");
+  } else if (hasComma) {
+    normalized = raw.replace(/,/g, ".");
+  } else if (hasDot) {
+    const idx = raw.lastIndexOf(".");
+    if (raw.slice(idx + 1).length === 3) {
+      normalized = raw.replace(/\./g, "");
+    }
+  }
   const value = Number(normalized);
   if (!Number.isFinite(value) || value < 0) return null;
   return Math.round(value * 100);

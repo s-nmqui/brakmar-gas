@@ -199,6 +199,21 @@ export const IconLogout = (p: IconProps) =>
 export const IconList = (p: IconProps) =>
   base(p, <path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01" />);
 
+export const IconDollar = (p: IconProps) =>
+  base(
+    p,
+    <path d="M12 2v20M17 5.5C16 4.6 14.2 4 12 4c-2.8 0-5 1.4-5 3.5S10 10 12 10s5 1.4 5 3.5S14.8 17 12 17c-2.2 0-4-.6-5-1.5" />,
+  );
+
+export const IconChart = (p: IconProps) =>
+  base(
+    p,
+    <>
+      <path d="M4 20V10M10 20V4M16 20v-7" />
+      <path d="M3 20h18" />
+    </>,
+  );
+
 export const IconTag = (p: IconProps) =>
   base(
     p,

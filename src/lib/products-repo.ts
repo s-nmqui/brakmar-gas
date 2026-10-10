@@ -12,6 +12,7 @@ interface ProductRow {
   description: string;
   price_cents: number | null;
   promo_price_cents: number | null;
+  cost_cents: number | null;
   image_path: string | null;
   extra_images: string;
   stock: number;
@@ -41,6 +42,7 @@ function mapProduct(row: ProductRow): Product {
     description: row.description,
     priceCents: row.price_cents,
     promoPriceCents: row.promo_price_cents,
+    costCents: row.cost_cents,
     imagePath: row.image_path,
     extraImages: extra,
     stock: row.stock,
@@ -131,6 +133,7 @@ export interface ProductInput {
   description: string;
   priceCents: number | null;
   promoPriceCents: number | null;
+  costCents: number | null;
   imagePath: string | null;
   extraImages: string[];
   stock: number;
@@ -161,8 +164,8 @@ export function createProduct(input: ProductInput): number {
     .prepare(
       `INSERT INTO products
         (name, slug, category_id, product_type, description, price_cents, promo_price_cents,
-         image_path, extra_images, stock, low_stock_threshold, availability, is_featured, is_published)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         cost_cents, image_path, extra_images, stock, low_stock_threshold, availability, is_featured, is_published)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       input.name,
@@ -172,6 +175,7 @@ export function createProduct(input: ProductInput): number {
       input.description,
       input.priceCents,
       input.promoPriceCents,
+      input.costCents,
       input.imagePath,
       JSON.stringify(input.extraImages),
       input.stock,
@@ -189,7 +193,7 @@ export function updateProduct(id: number, input: ProductInput): void {
   db.prepare(
     `UPDATE products SET
        name = ?, slug = ?, category_id = ?, product_type = ?, description = ?,
-       price_cents = ?, promo_price_cents = ?, image_path = ?, extra_images = ?,
+       price_cents = ?, promo_price_cents = ?, cost_cents = ?, image_path = ?, extra_images = ?,
        stock = ?, low_stock_threshold = ?, availability = ?, is_featured = ?,
        is_published = ?, updated_at = datetime('now')
      WHERE id = ?`,
@@ -201,6 +205,7 @@ export function updateProduct(id: number, input: ProductInput): void {
     input.description,
     input.priceCents,
     input.promoPriceCents,
+    input.costCents,
     input.imagePath,
     JSON.stringify(input.extraImages),
     input.stock,

@@ -29,6 +29,7 @@ export interface Product {
   description: string;
   priceCents: number | null;
   promoPriceCents: number | null;
+  costCents: number | null;
   imagePath: string | null;
   extraImages: string[];
   stock: number;

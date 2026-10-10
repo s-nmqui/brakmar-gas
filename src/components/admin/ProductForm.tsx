@@ -145,25 +145,25 @@ export function ProductForm({
               <FieldError message={state.fieldErrors?.promoPrice} />
             </div>
             <div>
-              <label htmlFor="availability" className="field-label">
-                Disponibilidad
+              <label htmlFor="cost" className="field-label">
+                Costo unitario (UYU)
               </label>
-              <select
-                id="availability"
-                name="availability"
-                defaultValue={product?.availability ?? "unknown"}
+              <input
+                id="cost"
+                name="cost"
+                inputMode="decimal"
+                placeholder="Opcional"
+                defaultValue={centsToInput(product?.costCents)}
                 className="field-input"
-              >
-                {AVAILABILITY_OPTIONS.map((a) => (
-                  <option key={a} value={a}>
-                    {AVAILABILITY_LABELS[a]}
-                  </option>
-                ))}
-              </select>
+              />
+              <FieldError message={state.fieldErrors?.cost} />
+              <p className="mt-1 text-xs text-neutral-500">
+                Se usa para estimar márgenes en las ventas.
+              </p>
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <label htmlFor="stock" className="field-label">
                 Stock
@@ -191,6 +191,23 @@ export function ProductForm({
                 defaultValue={product?.lowStockThreshold ?? 3}
                 className="field-input"
               />
+            </div>
+            <div>
+              <label htmlFor="availability" className="field-label">
+                Disponibilidad
+              </label>
+              <select
+                id="availability"
+                name="availability"
+                defaultValue={product?.availability ?? "unknown"}
+                className="field-input"
+              >
+                {AVAILABILITY_OPTIONS.map((a) => (
+                  <option key={a} value={a}>
+                    {AVAILABILITY_LABELS[a]}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
